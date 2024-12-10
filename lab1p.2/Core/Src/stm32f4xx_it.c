@@ -77,6 +77,9 @@ void NMI_Handler(void)
   }
   /* USER CODE END NonMaskableInt_IRQn 1 */
 }
+void EXTI15_10_IRQHandler(void) {
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13); // Виклик обробника HAL
+}
 
 /**
   * @brief This function handles Hard fault interrupt.
