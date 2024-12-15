@@ -48,6 +48,10 @@ int main(void) {
     HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
     __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, brightness * 10); // Встановлення початкової яскравості
 
+    // Відправлення вітального повідомлення через UART
+    char welcomeMessage[] = "Brightness control is active\r\n";
+    HAL_UART_Transmit(&huart2, (uint8_t *)welcomeMessage, strlen(welcomeMessage), HAL_MAX_DELAY);
+
     // Буфери для команд і відповідей UART
     uint8_t buffer[100]; // Буфер для прийому даних
     uint8_t response[100]; // Буфер для відповіді
