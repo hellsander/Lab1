@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
+
 // Оголошення глобальних змінних
 UART_HandleTypeDef huart2; // Дескриптор UART2
 TIM_HandleTypeDef htim2;   // Дескриптор таймера TIM2
