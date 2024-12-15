@@ -44,9 +44,7 @@ int main(void) {
     HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
     __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, brightness * 10); // Встановлюємо початкову яскравість
 
-    // Відправка стартового повідомлення
-    uint8_t startMessage[] = "UART Brightness Control Active\r\n";
-    HAL_UART_Transmit(&huart2, startMessage, sizeof(startMessage), HAL_MAX_DELAY);
+
 
     uint8_t buffer[100]; // Буфер для отримання команд
     uint8_t response[100]; // Буфер для відповіді
@@ -67,14 +65,14 @@ int main(void) {
                                 __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, brightness * 10); // Застосовуємо нову яскравість
                             }
 
-                            snprintf((char *)response, sizeof(response), "Brightness set to %d\r\n", brightness);
+                            snprintf((char *)response, sizeof(response), "Brightness set to %d", brightness);
                             HAL_UART_Transmit(&huart2, response, strlen((char *)response), HAL_MAX_DELAY);
                         } else {
-                            snprintf((char *)response, sizeof(response), "Error: Invalid value\r\n");
+                            snprintf((char *)response, sizeof(response), "Error: Invalid value");
                             HAL_UART_Transmit(&huart2, response, strlen((char *)response), HAL_MAX_DELAY);
                         }
                     } else {
-                        snprintf((char *)response, sizeof(response), "Error: Invalid command\r\n");
+                        snprintf((char *)response, sizeof(response), "Error: Invalid command");
                         HAL_UART_Transmit(&huart2, response, strlen((char *)response), HAL_MAX_DELAY);
                     }
                 }
@@ -84,7 +82,7 @@ int main(void) {
                     buffer[index++] = data;
                 } else {
                     index = 0;
-                    snprintf((char *)response, sizeof(response), "Error: Command too long\r\n");
+                    snprintf((char *)response, sizeof(response), "Error: Command too long");
                     HAL_UART_Transmit(&huart2, response, strlen((char *)response), HAL_MAX_DELAY);
                 }
             }
