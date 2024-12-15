@@ -1,7 +1,7 @@
 #include "main.h"
 #include <string.h>
 #include <stdio.h>
-#include <ctype.h> // Для tolower
+#include <ctype.h>
 
 UART_HandleTypeDef huart2;
 TIM_HandleTypeDef htim2;
