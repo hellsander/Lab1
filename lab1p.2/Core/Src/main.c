@@ -3,11 +3,12 @@
 #include <stdio.h>
 #include <ctype.h>
 
-UART_HandleTypeDef huart2;
-TIM_HandleTypeDef htim2;
+// Оголошення глобальних змінних
+UART_HandleTypeDef huart2; // Дескриптор UART2
+TIM_HandleTypeDef htim2;   // Дескриптор таймера TIM2
 
 // Глобальні змінні
-volatile uint8_t brightness = 50;  // Актуальна яскравість (50%)
+volatile uint8_t brightness = 50;  // Поточна яскравість (50%)
 volatile uint8_t ledState = 1;     // Стан світлодіода (1 - увімкнено, 0 - вимкнено)
 
 // Прототипи функцій
@@ -17,67 +18,84 @@ void MX_USART2_UART_Init(void);
 void MX_TIM2_Init(void);
 void Error_Handler(void);
 
-// Обробка переривання від кнопки B1
+// Обробник переривання для кнопки B1
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-    if (GPIO_Pin == GPIO_PIN_13) { // Якщо переривання від B1
-
+    if (GPIO_Pin == GPIO_PIN_13) { // Якщо натиснуто кнопку B1
         ledState = !ledState; // Змінюємо стан світлодіода
         if (ledState) {
-            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, brightness * 10); // Відновлення яскравості
+            // Відновлення яскравості, якщо світлодіод увімкнено
+            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, brightness * 10);
         } else {
-            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0); // Гасимо світлодіод
+            // Гасимо світлодіод
+            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
         }
     }
 }
 
 int main(void) {
+    // Ініціалізація HAL-бібліотеки
     HAL_Init();
+
+    // Налаштування системного тактування
     SystemClock_Config();
+
+    // Ініціалізація GPIO, UART2 та таймера TIM2
     MX_GPIO_Init();
     MX_USART2_UART_Init();
     MX_TIM2_Init();
 
-    // Запуск PWM на TIM2, канал 1
+    // Запуск PWM на TIM2 (канал 1) для керування яскравістю світлодіода
     HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, brightness * 10); // Встановлюємо початкову яскравість
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, brightness * 10); // Встановлення початкової яскравості
 
-    uint8_t buffer[100]; // Буфер для отримання команд
+    // Буфери для команд і відповідей UART
+    uint8_t buffer[100]; // Буфер для прийому даних
     uint8_t response[100]; // Буфер для відповіді
-    uint16_t index = 0;
+    uint16_t index = 0;    // Поточний індекс буфера
 
     while (1) {
-        uint8_t data;
-        // Прийом символів через UART
+        uint8_t data; // Змінна для зберігання отриманого символа
+        // Прийом символа через UART
         if (HAL_UART_Receive(&huart2, &data, 1, HAL_MAX_DELAY) == HAL_OK) {
             if (data == '\n' || data == '\r') {
-                buffer[index] = '\0';
+                // Якщо отримано символ завершення рядка
+                buffer[index] = '\0'; // Завершуємо рядок у буфері
                 if (index > 0) {
+                    // Перевірка команди в буфері
                     if (tolower(buffer[0]) == 'l' && buffer[1] == '=') {
                         int new_brightness = -1;
+                        // Зчитування нового значення яскравості
                         if (sscanf((char *)&buffer[2], "%d", &new_brightness) == 1 && new_brightness >= 0 && new_brightness <= 99) {
-                            brightness = new_brightness; // Оновлюємо глобальну яскравість
+                            brightness = new_brightness; // Оновлення яскравості
                             if (ledState) {
-                                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, brightness * 10); // Застосовуємо нову яскравість
+                                // Застосування нової яскравості, якщо світлодіод увімкнено
+                                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, brightness * 10);
                             }
-
-                            snprintf((char *)response, sizeof(response), "Brightness set to %d", brightness);
+                            // Відправка відповіді через UART
+                            snprintf((char *)response, sizeof(response), "Brightness set to %d\r\n", brightness);
                             HAL_UART_Transmit(&huart2, response, strlen((char *)response), HAL_MAX_DELAY);
                         } else {
-                            snprintf((char *)response, sizeof(response), "Error: Invalid value");
+                            // Якщо значення некоректне
+                            snprintf((char *)response, sizeof(response), "Error: Invalid value\r\n");
                             HAL_UART_Transmit(&huart2, response, strlen((char *)response), HAL_MAX_DELAY);
                         }
                     } else {
-                        snprintf((char *)response, sizeof(response), "Error: Invalid command");
+                        // Якщо команда некоректна
+                        snprintf((char *)response, sizeof(response), "Error: Invalid command\r\n");
                         HAL_UART_Transmit(&huart2, response, strlen((char *)response), HAL_MAX_DELAY);
                     }
                 }
+                // Очищення буфера після обробки команди
+                memset(buffer, 0, sizeof(buffer));
                 index = 0;
             } else {
+                // Додавання символа до буфера
                 if (index < sizeof(buffer) - 1) {
                     buffer[index++] = data;
                 } else {
+                    // Якщо команда занадто довга
                     index = 0;
-                    snprintf((char *)response, sizeof(response), "Error: Command too long");
+                    snprintf((char *)response, sizeof(response), "Error: Command too long\r\n");
                     HAL_UART_Transmit(&huart2, response, strlen((char *)response), HAL_MAX_DELAY);
                 }
             }
@@ -89,6 +107,7 @@ void SystemClock_Config(void) {
     RCC_OscInitTypeDef RCC_OscInitStruct = {0};
     RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
+    // Налаштування генератора HSI та PLL
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
     RCC_OscInitStruct.HSIState = RCC_HSI_ON;
     RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
@@ -102,6 +121,7 @@ void SystemClock_Config(void) {
         Error_Handler();
     }
 
+    // Налаштування тактування шин
     RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK |
                                   RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
     RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
@@ -117,6 +137,7 @@ void SystemClock_Config(void) {
 void MX_GPIO_Init(void) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
+    // Увімкнення тактування GPIO портів
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();
 
@@ -140,6 +161,7 @@ void MX_GPIO_Init(void) {
 }
 
 void MX_USART2_UART_Init(void) {
+    // Налаштування параметрів UART2
     huart2.Instance = USART2;
     huart2.Init.BaudRate = 9600;
     huart2.Init.WordLength = UART_WORDLENGTH_8B;
@@ -155,6 +177,8 @@ void MX_USART2_UART_Init(void) {
 
 void MX_TIM2_Init(void) {
     TIM_OC_InitTypeDef sConfigOC = {0};
+
+    // Налаштування параметрів таймера TIM2
     htim2.Instance = TIM2;
     htim2.Init.Prescaler = 84 - 1;
     htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -165,6 +189,8 @@ void MX_TIM2_Init(void) {
     if (HAL_TIM_PWM_Init(&htim2) != HAL_OK) {
         Error_Handler();
     }
+
+    // Налаштування PWM на каналі 1
     sConfigOC.OCMode = TIM_OCMODE_PWM1;
     sConfigOC.Pulse = 0;
     sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
@@ -176,6 +202,7 @@ void MX_TIM2_Init(void) {
 }
 
 void Error_Handler(void) {
+    // Увімкнення нескінченного циклу у разі помилки
     __disable_irq();
     while (1) {
     }
