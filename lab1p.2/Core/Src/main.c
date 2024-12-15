@@ -20,9 +20,7 @@ void Error_Handler(void);
 // Обробка переривання від кнопки B1
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (GPIO_Pin == GPIO_PIN_13) { // Якщо переривання від B1
-        uint8_t msg[] = "B1 pressed\r\n";
-        HAL_UART_Transmit(&huart2, msg, sizeof(msg), HAL_MAX_DELAY);
-        HAL_Delay(50); // Антидребезг кнопки
+
         ledState = !ledState; // Змінюємо стан світлодіода
         if (ledState) {
             __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, brightness * 10); // Відновлення яскравості
