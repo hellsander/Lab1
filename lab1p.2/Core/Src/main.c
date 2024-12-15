@@ -30,7 +30,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     }
 }
 
-
 int main(void) {
     HAL_Init();
     SystemClock_Config();
@@ -41,8 +40,6 @@ int main(void) {
     // Запуск PWM на TIM2, канал 1
     HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
     __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, brightness * 10); // Встановлюємо початкову яскравість
-
-
 
     uint8_t buffer[100]; // Буфер для отримання команд
     uint8_t response[100]; // Буфер для відповіді
