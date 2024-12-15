@@ -151,7 +151,6 @@ void MX_USART2_UART_Init(void) {
     huart2.Init.Mode = UART_MODE_TX_RX;
     huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
     huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-
     if (HAL_UART_Init(&huart2) != HAL_OK) {
         Error_Handler();
     }
@@ -159,7 +158,6 @@ void MX_USART2_UART_Init(void) {
 
 void MX_TIM2_Init(void) {
     TIM_OC_InitTypeDef sConfigOC = {0};
-
     htim2.Instance = TIM2;
     htim2.Init.Prescaler = 84 - 1;
     htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -170,7 +168,6 @@ void MX_TIM2_Init(void) {
     if (HAL_TIM_PWM_Init(&htim2) != HAL_OK) {
         Error_Handler();
     }
-
     sConfigOC.OCMode = TIM_OCMODE_PWM1;
     sConfigOC.Pulse = 0;
     sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
